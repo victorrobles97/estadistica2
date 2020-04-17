@@ -1,0 +1,116 @@
+*****USO DE SCRAPPING POR WEB*******
+Las tablas de datos en la web pueden ser descargadas con facilidad
+usa el botón derecho de tu mouse para inspeccionar el código de la página web.
+Una vez haya identificado bien tu tabla, usa nuevamente el boton derecho sobre el código en html y copia el XPATH
+
+Lo primero que debes hacer es instalar el paquete "htmltab", el cual te permitirá descargar la información de las páginas web al R:
+
+```{r}
+install.packages("htmltab")
+library(htmltab)
+```
+
+Ahora ya puedo indicarle al R de donde se extraerá la tabla que quiero:
+
+```{r}
+happyL="https://en.wikipedia.org/wiki/World_Happiness_Report"
+happyPath='//*[@id="mw-content-text"]/div/table/tbody'
+```
+
+Luego, ya puedo indicarle que lo extraiga:
+```{r}
+happy= htmltab(doc =happyL,
+               which =happyPath)
+```
+
+Comenzamos a indagar sobre la data:
+
+Vemos cómo están los datos
+```{r}
+head(happy)
+tail(happy)
+str(happy)
+```
+
+
+Evaluamos los nombres de las variables
+```{r}
+names(happy)
+```
+
+Hacemos modificaciones
+```{r}
+#para eliminar las separaciones o espacios en blanco en los nombres de las variables
+names(happy)=gsub(" ","",names(happy))
+names(happy)
+
+#para cambiar el nombre de una variable
+names(happy)
+names(happy)[names(happy)=="Score"]="ScoreHappy"
+names(happy)
+
+#para eliminar una variable
+names(happy)
+happy$Overallrank=NULL
+names(happy)
+
+#para volver una columna (variable) de cadena a factor
+happy$Socialsupport=as.factor(happy$Socialsupport)
+str(happy)
+```
+
+******Uso de los APIs*******
+
+Los API permiten construir pedidos de datos a través de una dirección web. Para que el trabajo de colección de datos sea exitoso, necesitamos revisar la documentación del API. Poe tanto, debemos entrar a la página de interés, y se pide un código (appi key) para poder leer interactivamente los datos que se va a solicitar.
+
+Vamos a simular que se necesita conseguir con urgencia los datos de la Municipalidad de San Isidro, la cual tiene un “Application Programming Interface” (API): Vamos a revisar los datos sobre cultura, en específico conseguir la data de “actividades culturales de San Isidro”.
+
+http://www.msi.gob.pe/portal/
+
+Lo primero que te sugiere el API es que obtengas tu llave (API_KEY). Consigue una y guardala como objeto:
+
+```{r}
+miLLAVE='9292f5826ec89a86efcc2a6b66faa8cc184bc9fd'
+```
+
+#Construir una solicitud para colectar los datos que están en la vista de datos actual (GUID), incluyendo el formato: OJO estos pasos te los indica la misma página web cuando vas a solicitar el APIkey.
+```{r}
+GUID='http://api.datosabiertos.msi.gob.pe/api/v2/datastreams/ACTIV-CULTU-EN-SAN-ISIDR/'
+FORMATO='data.json/'
+```
+
+
+#Recuerda que R necesita que instales jsonlite para poder interpretar formato JSON; luego de hacerlo, habilitala
+```{r}
+install.packages("jsonlite")
+library(jsonlite)
+```
+
+#Con esto, has resumido toda la solicitud en un GUID + un FORMATO. Es una simple economización del espacio. Posteriormente, tenemos que PEGAR los dos (guid y formato). Así formamos nuestro REQUERIMIENTO:
+
+```{r}
+request=paste0(GUID,FORMATO,'?auth_key=',miLLAVE)
+request
+culturaSI = fromJSON(request)
+culturaSI
+```
+
+Este pedido no se parece a lo que necesitas. No es que hayas fracasado, sino que debiste estudiar la documentación del API. Luego de leerla, sabrías que era mejor pedir otro formato para la vista de datos, el PJSON:
+
+```{r}
+FORMATO='data.pjson/'
+request2=paste0(GUID,FORMATO,'?auth_key=',miLLAVE)
+culturaSI = fromJSON(request2)
+culturaSI
+str(culturaSI)
+```
+
+Para poder acceder a un data frame con los resultados del request, usar este comando:
+```{r}
+data = do.call(rbind,culturaSI)
+```
+
+
+
+
+
