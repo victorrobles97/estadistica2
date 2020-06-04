@@ -1,1 +1,0 @@
-#Examen Parcial Estadística II#
