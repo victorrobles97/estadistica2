@@ -1,12 +1,13 @@
 ###Scrapping ->Manera de poder jaalr contenido de internet para el R
 
+
 linkPage= "https://en.wikipedia.org/wiki/2019%E2%80%9320_coronavirus_pandemic"
 linkPath = '//*[@id="thetable"]'
 
 library(htmltab)
 coronavirus = htmltab(doc = linkPage, which =linkPath, rm_nodata_cols = F) 
 
-###Limpieza
+
 head(coronavirus)
 coronavirus = coronavirus[,c(2:5)]
 
@@ -34,3 +35,7 @@ View(coronavirus)
 ###Análisis
 
 str(coronavirus)
+
+#dscscscs
+
+
