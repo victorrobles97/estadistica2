@@ -1,0 +1,48 @@
+
+```{r}
+#Para Eliminar la Data Innecesaria
+plot(cars)
+names(Base1)
+Base1[,-c(7,9,11,16,18,35)] =NULL
+Base1
+```
+
+
+```{r}
+#Cambiarle el Nombre
+Base1$prov->Base1$Departamento
+Base1$perprov->Base1$Provincia
+Base1$ur->Base1$Zona
+Base1$q1->Base1$Sexo
+Base1$q2->Base1$Edad
+Base1$cp13->Base1$AsistPartiPolit
+Base1
+```
+
+
+```{r}
+#Eliminar la data previa
+Base1[,c(1,2,3,4,5,6)]=NULL
+Base1
+```
+
+
+```{r}
+#Cambiar el nombre del contenido de las variabes
+#1.-Zona
+Base1$Zona <- gsub("1","Urbano",Base1$Zona)
+Base1$Zona <- gsub("2","Rural",Base1$Zona)
+
+#Sexo
+Base1$Sexo <- gsub("1","Hombre",Base1$Sexo)
+Base1$Sexo <- gsub("2","Mujer",Base1$Sexo)
+
+#Asistencia a Partidos Políticos
+Base1$AsistPartiPolit <- gsub("1","Una vez a la semana",Base1$AsistPartiPolit)
+Base1$AsistPartiPolit <- gsub("2","Una o dos veces al mes",Base1$AsistPartiPolit)
+Base1$AsistPartiPolit <- gsub("3","Una o dos veces al año",Base1$AsistPartiPolit)
+Base1$AsistPartiPolit <- gsub("4","Nunca",Base1$AsistPartiPolit)
+Base1
+```
+
+
