@@ -1,0 +1,39 @@
+
+
+```{r}
+install.packages("rio")
+install.packages("htmltab")
+install.packages("stringr")
+library(rio)
+library(htmltab)
+library(stringr)
+linkEst="https://github.com/victorrobles97/estadistica2/raw/master/sindni.xlsx"
+dni=import(linkEst)
+dni
+
+
+
+```
+
+
+
+```{r}
+
+names(dni)=gsub(" ", "", names(dni))
+dni$sindocumento=as.numeric(dni$sindocumento) 
+str(dni)
+dni$sindocumento=round(dni$sindocumento,4) #reduciendo decimales
+head(dni)
+dni$departamento=str_split(dni$departamento,
+                                pattern = 'Departamento: ',
+                                simplify = T)[,2]
+dni
+```
+
+```{r}
+
+dni$departamento[7]="Callao"
+names(dni)
+View(dni)
+
+```
