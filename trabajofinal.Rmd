@@ -1,0 +1,111 @@
+
+
+```{r}
+plot(cars)
+```
+
+```{r}
+install.packages("rio")
+install.packages("htmltab")
+install.packages("stringr")
+library(rio)
+library(htmltab)
+library(stringr)
+linkEst="https://github.com/victorrobles97/estadistica2/raw/master/data1.xlsx"
+provincia=import(linkEst)
+provincia
+
+```
+
+
+
+```{r}
+names(provincia)=gsub(" ", "", names(provincia))
+str(provincia)
+provincia[,-1]=round((provincia[,-1]),4) #reduciendo decimales
+provincia$provincia=str_split(provincia$provincia,
+                                pattern = ', provincia: ',
+                                simplify = T)[,2]
+dni
+```
+
+```{r}
+provincia$provincia[4]="Condorcanqui"
+provincia$provincia[67]="Callao"
+provincia$provincia[146]="Tambopata"
+provincia$provincia[147]="Manu"
+provincia$provincia[148]="Tahuamanu"
+
+names(provincia)
+View(provincia)
+rownames(provincia)=provincia$provincia
+```
+
+```{r}
+install.packages("plyr")
+install.packages("factoextra")
+library(plyr)
+library(cluster)
+library(factoextra)
+library(magrittr)
+# usar en C() las dimensiones de interes:
+set.seed(2020)
+g.dist=daisy(provincia[,c(3:10)], metric="gower")
+inputData=provincia[,c(3:10)]
+str(inputData)
+
+inputData=na.omit(inputData)
+
+fviz_nbclust(inputData,pam, diss=g.dist,method = "gap_stat",k.max = 10,verbose = F)
+
+```
+
+
+```{r}
+fviz_nbclust(inputData, hcut,diss=g.dist,method = "gap_stat",k.max = 10,verbose = F)
+
+#4 CLUSTERS POR JERAR Y POR PAM
+```
+
+```{r}
+#PROPONER CANTIDAD DE CLUSTERS
+pam.resultado=pam(g.dist,3,cluster.only = F)
+agnes.resultado = hcut(g.dist, k = 4,hc_func='agnes',hc_method = "ward.D")
+diana.resultado = hcut(g.dist, k = 4,hc_func='diana')
+```
+
+```{r}
+fviz_silhouette(pam.resultado)
+```
+
+
+```{r}
+fviz_silhouette(agnes.resultado)
+```
+
+
+```{r}
+fviz_silhouette(diana.resultado)
+```
+
+```{r}
+
+provincia$clustDIV=diana.resultado$cluster
+```
+
+```{r}
+fviz_dend(diana.resultado, cex = 0.7,horiz = T)
+
+```
+```{r}
+head(diana.resultado$silinfo$widths)
+tail(diana.resultado$silinfo$widths)
+
+
+diana.resultado$silinfo
+``` 
+
+```{r}
+data=data.frame(diana.resultado$silinfo$widths)
+
+```
