@@ -1,0 +1,381 @@
+
+
+```{r}
+plot(cars)
+```
+
+```{r}
+install.packages("rio")
+install.packages("htmltab")
+install.packages("stringr")
+library(rio)
+library(htmltab)
+library(stringr)
+linkEst="https://github.com/victorrobles97/estadistica2/raw/master/data1.xlsx"
+provincia=import(linkEst)
+str(provincia)
+provincia$pob_ind=as.numeric(provincia$pob_ind)
+
+
+
+provincia$pob_ind[6]="0.02"
+provincia$pob_ind[9]="0.648"
+provincia$pob_ind[13]="0.688"
+provincia$pob_ind[23]="0.748"
+provincia$pob_ind[26]="0.433"
+provincia$pob_ind[66]="0.017"
+provincia$pob_ind[82]="0.594"
+provincia$pob_ind[89]="0.497"
+provincia$pob_ind[101]="0.132"
+provincia$pob_ind[108]="0.522"
+provincia$pob_ind[113]="0.256"
+provincia$pob_ind[170]="0965"
+provincia$pob_ind[178]="0.008"
+```
+
+
+
+```{r}
+names(provincia)=gsub(" ", "", names(provincia))
+str(provincia)
+provincia$pob_ind=as.numeric(provincia$pob_ind)
+provincia[,-1]=round((provincia[,-1]),3) #reduciendo decimales
+provincia$provincia=str_split(provincia$provincia,
+                                pattern = ', provincia: ',
+                                simplify = T)[,2]
+provincia$pob_ind=as.numeric(provincia$pob_ind)
+```
+
+```{r}
+provincia$provincia[145]="Manu"
+provincia$provincia[146]="Tahuamanu"
+provincia$provincia[147]="Tambopata"
+provincia$provincia[162]="Callao"
+names(provincia)
+rownames(provincia)=provincia$provincia
+
+
+provincia["Callao", "pob_ru"]= 0
+```
+
+```{r}
+install.packages("plyr")
+install.packages("factoextra")
+library(plyr)
+library(cluster)
+library(factoextra)
+library(magrittr)
+# usar en C() las dimensiones de interes:
+set.seed(2020)
+g.dist= daisy(provincia[,-c(1,8)], metric="gower") #Eliminamos provincia y participación indigena (variable dependiente)
+
+inputData=provincia[,-c(1,8)]
+str(inputData)
+inputData
+
+``` 
+
+```{r}
+#CORTES PAM
+fviz_nbclust(inputData,pam, diss=g.dist,method = "gap_stat",k.max = 10,verbose = F)
+#2 CORTES
+```
+
+
+```{r}
+fviz_nbclust(inputData, hcut,diss=g.dist,method = "gap_stat",k.max = 10,verbose = F)
+#2 CLUSTERS POR JERAR 
+```
+
+```{r}
+#PROPONER CANTIDAD DE CLUSTERS
+pam.resultado=pam(g.dist,2,cluster.only = F)
+agnes.resultado = hcut(g.dist, k = 2,hc_func='agnes',hc_method = "ward.D")
+diana.resultado = hcut(g.dist, k = 2,hc_func='diana')
+
+
+
+```
+
+```{r}
+fviz_silhouette(pam.resultado)
+```
+
+
+```{r}
+fviz_silhouette(agnes.resultado)
+```
+
+
+```{r}
+fviz_silhouette(diana.resultado)
+```
+
+```{r}
+#USANDO DIANA
+provincia$clusterDIV=pam.resultado$cluster
+fviz_dend(diana.resultado, cex = 0.7,horiz = T)
+```
+
+
+```{r}
+head(diana.resultado$silinfo$widths)
+tail(diana.resultado$silinfo$widths)
+diana.resultado$silinfo
+``` 
+
+```{r}
+data=data.frame(diana.resultado$silinfo$widths)
+table(provincia$clusterDIV)
+```
+
+```{r}
+#ANALSIS FACTORIAL EXPLORATORIO
+dontselect=c("provincia","clusterDIV","part_ind")
+select=setdiff(names(provincia),dontselect) 
+theData=provincia[,select]
+```
+
+```{r}
+install.packages("polycor")
+install.packages("ggcorrplot")
+library(polycor)
+library(ggcorrplot)
+corMatrix=polycor::hetcor(theData[,c(1:7)])$correlations
+ggcorrplot(corMatrix)
+```
+
+```{r}
+ggcorrplot(corMatrix,
+          p.mat = cor_pmat(corMatrix),
+          insig = "blank")
+```
+
+```{r}
+install.packages("psych")
+library(psych)
+psych::KMO(corMatrix) 
+```
+
+
+```{r}
+cortest.bartlett(corMatrix,n=nrow(theData[,c(1:7)]))$p.value>0.05
+```
+
+```{r}
+install.packages("matrixcalc")
+library(matrixcalc)
+is.singular.matrix(corMatrix)
+```
+
+
+```{r}
+fa.parallel(theData[,c(1:7)],fm = 'ML', fa = 'fa')
+```
+
+```{r}
+install.packages("GPArotation")
+library(GPArotation)
+resfa <- fa(theData[,c(1:7)],nfactors = 2,cor = 'mixed',rotate = "varimax",fm="minres")
+```
+
+```{r}
+print(resfa$loadings)
+```
+
+```{r}
+print(resfa$loadings,cutoff = 0.5)
+```
+
+```{r}
+fa.diagram(resfa)
+```
+
+```{r}
+resfa$crms
+```
+
+```{r}
+resfa$RMSEA
+
+```
+
+```{r}
+resfa$TLI
+```
+
+```{r}
+sort(resfa$communality)
+```
+
+
+```{r}
+sort(resfa$complexity)
+```
+
+```{r}
+as.data.frame(resfa$scores)%>%head()
+
+```
+
+```{r}
+resfa
+```
+
+```{r}
+data2=cbind(provincia[1],as.data.frame(resfa$scores))
+```
+
+```{r}
+install.packages("plotly")
+library(plotly)
+
+
+plot_ly(data=data2, x = ~MR1, y = ~MR2, text=~provincia) %>%
+  add_markers() %>%
+  layout(scene = list(xaxis = list(title = ' Sin Servicios Básicos'),
+                     yaxis = list(title = 'Despejado')))
+
+```
+
+```{r}
+
+install.packages("BBmisc")
+library(BBmisc)
+provincia$MR1=normalize(data2$MR1, 
+                       method = "range", 
+                       margin=2, # by column
+                       range = c(0, 10))
+
+provincia$MR2=normalize(data2$MR2, 
+                       method = "range", 
+                       margin=2, # by column
+                       range = c(0, 10))
+
+
+plot(provincia[,c("MR1", "MR2")])
+
+```
+
+
+```{r}
+#ANALISIS CONFIRMATORIO 
+model <- ' tipopob  =~ pob_ru + pob_ind
+           sinserv =~ sinagua + sin_luz + sin_seguro
+           edu   =~ analfabetismo + solo_secu'
+
+install.packages("lavaan")
+library(lavaan)
+
+```
+
+```{r}
+cfa_fit <- cfa(model, data=theData, 
+           std.lv=TRUE,  
+           missing="fiml")
+
+allParamCFA=parameterEstimates(cfa_fit,standardized = T)
+allFitCFA=as.list(fitMeasures(cfa_fit))
+
+```
+
+
+```{r}
+library(knitr)
+kable(allParamCFA[allParamCFA$op=="=~",])
+
+```
+
+```{r}
+allFitCFA[c("chisq", "df", "pvalue")] # pvalue>0.05
+```
+
+```{r}
+allFitCFA$tli
+
+```
+```{r}
+allFitCFA[c('rmsea.ci.lower','rmsea' ,'rmsea.ci.upper')]
+
+```
+
+
+```{r}
+
+provincia=as.data.frame(cbind(provincia,lavPredict(cfa_fit)))
+summary(provincia)
+```
+```{r}
+#CONFIRMATORIO
+summary(lm(part_ind~tipopob+sinserv+edu,data = provincia))
+```
+```{r}
+#SIN ANALISIS FACTORIAL
+summary(lm(part_ind~analfabetismo+pob_ru+sinagua+solo_secu+pob_ind+sin_seguro+sin_luz, data= provincia))
+
+
+```
+```{r}
+#EXPLORATORIO
+summary(lm(part_ind~MR1+MR2,data = provincia))
+
+```
+```{r}
+#REGRESION SOLO CON VARIABLES SIGNIFICATIVAS
+summary(lm(part_ind~analfabetismo+pob_ru+sinagua+solo_secu+sin_luz, data= provincia))
+
+```
+```{r}
+#DIAGNOSTICOS
+
+modelo=formula(part_ind~analfabetismo+pob_ru+sinagua+solo_secu+sin_luz)
+install.packages("sjPlot")
+library(ggplot2)
+library(sjPlot)
+
+
+reg0=lm(modelo,data=provincia)
+plot(reg0, 1)
+
+
+
+```
+
+```{r}
+#HOMOCEDASTICIDAD
+plot(reg0, 3)
+install.packages("lmtest")
+library(lmtest)
+bptest(reg0)
+```
+
+```{r}
+#NORMALIDAD DE RESIDUOS
+plot(reg0, 2)
+shapiro.test(reg0$residuals)
+```
+
+```{r}
+install.packages("DescTools")
+library(DescTools)
+VIF(reg0)
+
+```
+```{r}
+#VARIABLES INFLUYENTES
+plot(reg0, 5)
+
+```
+```{r}
+
+checkReg=as.data.frame(influence.measures(reg0)$is.inf)
+head(checkReg)
+
+```
+```{r}
+checkReg[checkReg$cook.d | checkReg$hat,]
+
+```
+
+
+
